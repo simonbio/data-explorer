@@ -2,7 +2,7 @@ library(shiny)
 
 
 ui <- fluidPage(
-  title = "Examples of DataTables",
+  title = "DataExplorer",
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -34,14 +34,19 @@ ui <- fluidPage(
                                  "Single Quote" = "'"),
                      selected = '"'),
 
+        
+        
+        # # Horizontal line ----
+        # tags$hr(),
+        ## Uncomment below to allow the user to select between head or all display. Only useful when DT::datatable is not used to output table. 
+        # # Input: Select number of rows to display ----
+        # radioButtons("disp", "Display",
+        #              choices = c(Head = "head",
+        #                          All = "all"),
+        #              selected = "head"),
+        
         # Horizontal line ----
         tags$hr(),
-
-        # Input: Select number of rows to display ----
-        radioButtons("disp", "Display",
-                     choices = c(Head = "head",
-                                 All = "all"),
-                     selected = "head"),
         
         # placeholder for dynamic UI
         uiOutput("vars_controls")
@@ -86,13 +91,13 @@ server <- function(input, output) {
         stop(safeError(e))
       }
     )
-
-    if(input$disp == "head") {
-      return(head(df))
-    }
-    else {
-      return(df)
-    }
+    ## Uncomment below to allow the user to select between head or all display. Only useful when DT::datatable is not used to output table.
+    # if(input$disp == "head") {
+    #   return(head(df))
+    # }
+    # else {
+    #   return(df)
+    # }
   })
   
   # generate checkbox in the UI with variables for the chosen table
