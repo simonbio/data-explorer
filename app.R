@@ -6,7 +6,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
-        'input.type == "view"',
+        'input.type == "View"',
         # Input: Select a file ----
         fileInput("file1", "Choose CSV File",
                   multiple = FALSE,
@@ -53,15 +53,20 @@ ui <- fluidPage(
         
       ),
       conditionalPanel(
-        'input.type == "visualize"',
-        helpText("Click the column header to sort a column.")
+        'input.type == "Visualize"',
+        uiOutput("feature"),
+        
+        # Horizontal line ----
+        tags$hr(),
+        
+        uiOutput("outcome")
       )
     ),
     mainPanel(
       tabsetPanel(
-        id = 'type',
-        tabPanel("view", DT::dataTableOutput("mytable1")),
-        tabPanel("visualize", DT::dataTableOutput("mytable2"))
+        id = "type",
+        tabPanel("View", DT::dataTableOutput("view")),
+        tabPanel("Visualize", plotOutput("visualize"))
       )
     )
   )
@@ -100,6 +105,10 @@ server <- function(input, output) {
     # }
   })
   
+  
+  #### VIEW ####
+  
+  
   # generate checkbox in the UI with variables for the chosen table
   output$vars_controls <- renderUI({
     vars <- names(data_in())
@@ -107,12 +116,42 @@ server <- function(input, output) {
                        choices = vars, selected = vars)
   })
 
-  output$mytable1 <- DT::renderDataTable({
+  output$view <- DT::renderDataTable({
     DT::datatable(data_in()[, input$show_vars, drop = FALSE])
   })
   
-
   
+  #### VISUALIZE ####
+  
+  # generate input selector in the UI for feature
+  output$feature <- renderUI({
+    selectInput(
+      inputId = "feature", label = "Select the feature to plot:", 
+      choices = names(data_in()))
+  })
+  
+  # generate input selector in the UI for outcome
+  output$outcome <- renderUI({
+    selectInput(
+      inputId = "outcome", label = "Select the outcome variable to stratify by:", 
+      choices = names(data_in()))
+  })
+  
+  output$visualize <- renderPlot({
+      p <-
+        ggplot(data_in(), aes(x = input$feature, fill = as.factor(input$outcome)))# +
+        #aes_string(x = input$feature, fill = input$outcome)
+      
+      if(is.numeric(data_in()[input$feature])) {
+        p <- p + geom_density(alpha = 0.5)+theme_fivethirtyeight()+labs(subtitle = input$feature)+
+          scale_fill_manual(values = c("#999999", "#E69F00", "#FF5500"))
+        
+      } else {
+        p <- p + geom_bar(position = "fill")+theme_fivethirtyeight()+labs(subtitle = input$feature)+
+          scale_fill_manual(values = c("#999999", "#E69F00", "#FF5500"))
+      }
+      p
+    })
 }
 
 shinyApp(ui, server)
