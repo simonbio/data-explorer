@@ -54,12 +54,28 @@ ui <- fluidPage(
       ),
       conditionalPanel(
         'input.type == "Visualize"',
-        uiOutput("feature"),
         
-        # Horizontal line ----
-        tags$hr(),
+        selectInput("var_type", "Variable type", 
+                    c("None",
+                      Numerical = "numerical",
+                      Categorical = "categorical"
+                      )),
         
-        uiOutput("outcome")
+        # Numerical
+        conditionalPanel(
+          condition = "input.var_type == 'numerical'",
+          uiOutput("ui_out1"),
+          uiOutput("ui_out2"),
+          actionButton("ui_out1_button", "Plot!")
+        ),
+        
+        # Numerical
+        conditionalPanel(
+          condition = "input.var_type == 'categorical'",
+          uiOutput("ui_out3"),
+          uiOutput("ui_out4"),
+          actionButton("ui_out3_button", "Plot!")
+        )
       )
     ),
     mainPanel(
@@ -73,6 +89,8 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
+  require(ggplot2)
+  require(ggthemes)
   
   data_in <- reactive({
 
@@ -123,35 +141,71 @@ server <- function(input, output) {
   
   #### VISUALIZE ####
   
-  # generate input selector in the UI for feature
-  output$feature <- renderUI({
-    selectInput(
-      inputId = "feature", label = "Select the feature to plot:", 
-      choices = names(data_in()))
+  
+  # generate input selector for numerical variable and outcome variable in the UI when numerical veriable type is chosen  
+  observeEvent(input$var_type == "numerical",{
+    
+    output$ui_out1 <- renderUI({
+      selectInput(
+        inputId = "num_feature", label = "Select the feature to plot:", 
+        choices = names(data_in()))
+    })
+    
+    output$ui_out2 <- renderUI({
+      selectInput(
+        inputId = "outcome1", label = "Select the outcome variable to stratify by:", 
+        choices = names(data_in()))
+    })
   })
   
-  # generate input selector in the UI for outcome
-  output$outcome <- renderUI({
-    selectInput(
-      inputId = "outcome", label = "Select the outcome variable to stratify by:", 
-      choices = names(data_in()))
+  
+  # generate input selector for categorical variable and outcome variable in the UI when categorical veriable type is chosen  
+  observeEvent(input$var_type == "categorical",{
+    
+    output$ui_out3 <- renderUI({
+      selectInput(
+        inputId = "cat_feature", label = "Select the feature to plot:", 
+        choices = names(data_in()))
+    })
+    
+    output$ui_out4 <- renderUI({
+      selectInput(
+        inputId = "outcome2", label = "Select the outcome variable to stratify by:", 
+        choices = names(data_in()))
+    })
+  })
+  
+  
+  
+  
+  # Respond to user inputs - action button "Plot"
+  numerical_plot <- eventReactive(input$ui_out1_button, {
+    
+    p1 <- ggplot(data_in(), aes(x = data_in()[ ,input$num_feature], fill = factor(data_in()[ ,input$outcome1])))+geom_density(alpha = 0.5)+theme_fivethirtyeight()+
+      scale_fill_manual(values = c("#999999", "#E69F00"))
+    p1
+  })
+  
+  # Respond to user inputs - action button "Plot"
+  categorical_plot <- eventReactive(input$ui_out3_button, {
+    
+    p2 <- ggplot(data_in(), aes(x = data_in()[ ,input$cat_feature], fill = factor(data_in()[ ,input$outcome2])))+geom_bar(position = "fill")+theme_fivethirtyeight()+
+      scale_fill_manual(values = c("#999999", "#E69F00")) + scale_x_discrete(labels  = c("Death Event:No","Death Event:Yes"))
+    p2
+  })
+  
+  
+  
+  
+  # OUTPUT
+  
+  output$visualize <- renderPlot({
+    numerical_plot()
   })
   
   output$visualize <- renderPlot({
-      p <-
-        ggplot(data_in(), aes(x = input$feature, fill = as.factor(input$outcome)))# +
-        #aes_string(x = input$feature, fill = input$outcome)
-      
-      if(is.numeric(data_in()[input$feature])) {
-        p <- p + geom_density(alpha = 0.5)+theme_fivethirtyeight()+labs(subtitle = input$feature)+
-          scale_fill_manual(values = c("#999999", "#E69F00", "#FF5500"))
-        
-      } else {
-        p <- p + geom_bar(position = "fill")+theme_fivethirtyeight()+labs(subtitle = input$feature)+
-          scale_fill_manual(values = c("#999999", "#E69F00", "#FF5500"))
-      }
-      p
-    })
+    categorical_plot()
+  })
 }
 
 shinyApp(ui, server)
