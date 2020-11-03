@@ -13,27 +13,27 @@ ui <- fluidPage(
                   accept = c("text/csv",
                              "text/comma-separated-values,text/plain",
                              ".csv")),
-
+        
         # Horizontal line ----
         tags$hr(),
-
+        
         # Input: Checkbox if file has header ----
         checkboxInput("header", "Header", TRUE),
-
+        
         # Input: Select separator ----
         radioButtons("sep", "Separator",
                      choices = c(Comma = ",",
                                  Semicolon = ";",
                                  Tab = "\t"),
                      selected = ","),
-
+        
         # Input: Select quotes ----
         radioButtons("quote", "Quote",
                      choices = c(None = "",
                                  "Double Quote" = '"',
                                  "Single Quote" = "'"),
                      selected = '"'),
-
+        
         
         
         # # Horizontal line ----
@@ -55,30 +55,15 @@ ui <- fluidPage(
       conditionalPanel(
         'input.type == "Visualize"',
         
-        selectInput("var_type", "Variable type", 
-                    c("None",
-                      Numerical = "numerical",
-                      Categorical = "categorical"
-                      )),
-        
-        # Numerical
-        conditionalPanel(
-          condition = "input.var_type == 'numerical'",
-          uiOutput("ui_out1"),
-          uiOutput("ui_out2"),
-          actionButton("ui_out1_button", "Plot!")
-        ),
-        
-        # Numerical
-        conditionalPanel(
-          condition = "input.var_type == 'categorical'",
-          uiOutput("ui_out3"),
-          uiOutput("ui_out4"),
-          actionButton("ui_out3_button", "Plot!")
-        )
+        uiOutput("variable"), 	# depends on dataset ( set by output$variable in  server.R)
+        uiOutput("group"),  		# depends on dataset	( set by output$group in  server.R)
+        selectInput("plot_type","Plot Type:", 
+                    list(boxplot = "boxplot", histogram = "histogram", density = "density", bar = "bar")),
+        checkboxInput("show_points", "show points", TRUE)
       )
     ),
     mainPanel(
+      h3(textOutput("caption")),
       tabsetPanel(
         id = "type",
         tabPanel("View", DT::dataTableOutput("view")),
@@ -93,13 +78,13 @@ server <- function(input, output) {
   require(ggthemes)
   
   data_in <- reactive({
-
+    
     # input$file1 will be NULL initially. After the user selects
     # and uploads a file, head of that data file by default,
     # or all rows if selected, will be shown.
-
+    
     req(input$file1)
-
+    
     # when reading semicolon separated files,
     # having a comma separator causes `read.csv` to error
     tryCatch(
@@ -133,7 +118,7 @@ server <- function(input, output) {
     checkboxGroupInput('show_vars', 'Columns in table:',
                        choices = vars, selected = vars)
   })
-
+  
   output$view <- DT::renderDataTable({
     DT::datatable(data_in()[, input$show_vars, drop = FALSE])
   })
@@ -141,71 +126,92 @@ server <- function(input, output) {
   
   #### VISUALIZE ####
   
+  #update variable and group based on dataset
+  output$variable <- renderUI({ 
+    selectInput(
+      inputId = "variable", label = "Select the variable to plot:", 
+      choices = names(data_in())) # uddate UI 				 
+  }) 
   
-  # generate input selector for numerical variable and outcome variable in the UI when numerical veriable type is chosen  
-  observeEvent(input$var_type == "numerical",{
-    
-    output$ui_out1 <- renderUI({
-      selectInput(
-        inputId = "num_feature", label = "Select the feature to plot:", 
-        choices = names(data_in()))
-    })
-    
-    output$ui_out2 <- renderUI({
-      selectInput(
-        inputId = "outcome1", label = "Select the outcome variable to stratify by:", 
-        choices = names(data_in()))
-    })
+  
+  
+  output$group <- renderUI({ 
+    selectInput(
+      inputId = "group", label = "Select the variable to group by:", 
+      choices = names(data_in())) # uddate UI 				 
+  }) 
+  
+  output$caption<-renderText({
+    switch(input$plot_type,
+           "boxplot" 	= 	"Boxplot",
+           "histogram" =	"Histogram",
+           "density" 	=	"Density plot",
+           "bar" 		=	"Bar graph")
   })
   
   
-  # generate input selector for categorical variable and outcome variable in the UI when categorical veriable type is chosen  
-  observeEvent(input$var_type == "categorical",{
-    
-    output$ui_out3 <- renderUI({
-      selectInput(
-        inputId = "cat_feature", label = "Select the feature to plot:", 
-        choices = names(data_in()))
-    })
-    
-    output$ui_out4 <- renderUI({
-      selectInput(
-        inputId = "outcome2", label = "Select the outcome variable to stratify by:", 
-        choices = names(data_in()))
-    })
+  #set caption
+  output$caption<-renderText({
+    switch(input$plot_type,
+           "boxplot" 	= 	"Boxplot",
+           "histogram" =	"Histogram",
+           "density" 	=	"Density plot",
+           "bar" 		=	"Bar graph")
   })
   
   
-  
-  
-  # Respond to user inputs - action button "Plot"
-  numerical_plot <- eventReactive(input$ui_out1_button, {
-    
-    p1 <- ggplot(data_in(), aes(x = data_in()[ ,input$num_feature], fill = factor(data_in()[ ,input$outcome1])))+geom_density(alpha = 0.5)+theme_fivethirtyeight()+
-      scale_fill_manual(values = c("#999999", "#E69F00"))
-    p1
-  })
-  
-  # Respond to user inputs - action button "Plot"
-  categorical_plot <- eventReactive(input$ui_out3_button, {
-    
-    p2 <- ggplot(data_in(), aes(x = data_in()[ ,input$cat_feature], fill = factor(data_in()[ ,input$outcome2])))+geom_bar(position = "fill")+theme_fivethirtyeight()+
-      scale_fill_manual(values = c("#999999", "#E69F00")) + scale_x_discrete(labels  = c("Death Event:No","Death Event:Yes"))
-    p2
-  })
-  
-  
-  
-  
-  # OUTPUT
-  
+  #plotting function using ggplot2
   output$visualize <- renderPlot({
-    numerical_plot()
+    
+  #dynamic plotting options
+  plot_type<-switch(input$plot_type,
+                      "boxplot" 	= 	geom_boxplot(),
+                      "histogram" =	geom_histogram(alpha=0.5,position="identity"),
+                      "density" 	=	geom_density(alpha=.75),
+                      "bar" 		=	geom_bar(position="dodge")
+    )
+    
+    #plotting theme
+    theme<- theme(
+      axis.line = element_line(colour = 'gray', size = .75),
+      panel.background = element_blank(),
+      plot.background = element_blank()
+    )
+    if(input$plot_type=="boxplot")	{		#control for 1D or 2D graphs 
+      p<-ggplot(data_in(), 
+                aes(
+                  x 		= data_in()[,input$group], 
+                  y 		= data_in()[,input$variable],
+                  fill 	= as.factor(data_in()[,input$group])
+                )
+      ) + plot_type
+      
+      if(input$show_points==TRUE)
+      { 
+        p<-p+ geom_point(color='black',alpha=0.5, position = 'jitter')
+      }
+      
+    } else {
+      
+      p<-ggplot(data_in(), 
+                aes(
+                  x 		= data_in()[,input$variable],
+                  fill 	= as.factor(data_in()[,input$group]),
+                  group 	= as.factor(data_in()[,input$group])
+                  #color 	= as.factor(plot.obj$group)
+                )
+      ) + plot_type
+    }
+    
+    p<-p+labs(
+      fill 	= input$group,
+      x 		= "",
+      y 		= input$variable
+    )  +
+      theme
+    print(p)
   })
   
-  output$visualize <- renderPlot({
-    categorical_plot()
-  })
 }
 
 shinyApp(ui, server)
