@@ -58,11 +58,15 @@ ui <- fluidPage(
       conditionalPanel(
         'input.type == "Visualize"',
         
-        uiOutput("variable"), 	# depends on dataset ( set by output$variable in  server.R)
-        uiOutput("group"),  		# depends on dataset	( set by output$group in  server.R)
         selectInput("plot_type","Plot Type:", 
                     list(boxplot = "boxplot", histogram = "histogram", density = "density", bar = "bar")),
-        checkboxInput("show_points", "show points", TRUE)
+        uiOutput("variable"), 	# depends on dataset ( set by output$variable in  server.R)
+        uiOutput("group"),  		# depends on dataset	( set by output$group in  server.R)
+        checkboxInput("show_points", "show points", TRUE),
+        # Horizontal line ----
+        tags$hr(),
+        actionButton("plot_button", "Plot!")
+        
       )
     ),
     mainPanel(

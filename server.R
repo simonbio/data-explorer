@@ -4,9 +4,7 @@ server <- function(input, output) {
   
   data_in <- reactive({
     
-    # input$file1 will be NULL initially. After the user selects
-    # and uploads a file, head of that data file by default,
-    # or all rows if selected, will be shown.
+    # input$file1 will be NULL initially.
     
     req(input$file1)
     
@@ -59,21 +57,11 @@ server <- function(input, output) {
   }) 
   
   
-  
   output$group <- renderUI({ 
     selectInput(
       inputId = "group", label = "Select the variable to group by:", 
       choices = names(data_in())) # uddate UI 				 
   }) 
-  
-  output$caption<-renderText({
-    switch(input$plot_type,
-           "boxplot" 	= 	"Boxplot",
-           "histogram" =	"Histogram",
-           "density" 	=	"Density plot",
-           "bar" 		=	"Bar graph")
-  })
-  
   
   #set caption
   output$caption<-renderText({
@@ -85,15 +73,14 @@ server <- function(input, output) {
   })
   
   
-  #plotting function using ggplot2
-  output$visualize <- renderPlot({
-    
+  plots <- eventReactive(input$plot_button, {
+  
     #dynamic plotting options
     plot_type<-switch(input$plot_type,
                       "boxplot" 	= 	geom_boxplot(),
                       "histogram" =	geom_histogram(alpha=0.5,position="identity"),
                       "density" 	=	geom_density(alpha=.75),
-                      "bar" 		=	geom_bar(position="dodge")
+                      "bar" 		=	geom_bar(position="fill")
     )
     
     #plotting theme
@@ -109,12 +96,33 @@ server <- function(input, output) {
                   y 		= data_in()[,input$variable],
                   fill 	= as.factor(data_in()[,input$group])
                 )
-      ) + plot_type
+      ) + plot_type+
+        labs(
+          fill 	= input$group,
+          x 		= "",
+          y 		= input$variable
+        )
       
       if(input$show_points==TRUE)
       { 
         p<-p+ geom_point(color='black',alpha=0.5, position = 'jitter')
       }
+    }
+      
+    else if(input$plot_type=="bar") {
+      
+      p<-ggplot(data_in(), 
+                aes(
+                  x 		= data_in()[,input$variable], 
+                  fill = as.factor(data_in()[,input$group])
+                )
+      ) + plot_type+
+        labs(
+        fill 	= input$group,
+        x 		= input$variable,
+        y 		= ""
+      )
+      
       
     } else {
       
@@ -125,16 +133,22 @@ server <- function(input, output) {
                   group 	= as.factor(data_in()[,input$group])
                   #color 	= as.factor(plot.obj$group)
                 )
-      ) + plot_type
+      ) + plot_type+
+        labs(
+          fill 	= input$group,
+          x 		= input$variable,
+          y 		= ""
+        )
     }
     
-    p<-p+labs(
-      fill 	= input$group,
-      x 		= "",
-      y 		= input$variable
-    )  +
-      theme
+    p<-p+theme
     print(p)
+  })  
+  
+  
+  # OUTPUT
+  output$visualize <- renderPlot({
+    plots()
   })
   
 }
