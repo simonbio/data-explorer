@@ -47,6 +47,20 @@ server <- function(input, output) {
   })
   
   
+  
+  #### PROFILE ####
+  
+  output$profile <- renderTable({
+    introduce(data_in())
+  })
+  
+  # output$plot_missing <- renderPlot({
+  #   plot_missing(data_in())
+  # 
+  # })
+  # 
+  
+  
   #### VISUALIZE ####
   
   #update variable and group based on dataset

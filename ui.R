@@ -54,6 +54,13 @@ ui <- fluidPage(
         
       ),
       
+      
+      # UI for data profile panel ----
+      conditionalPanel(
+        'input.type == "Profile"'
+        
+      ),
+      
       # UI for visualize panel ----
       conditionalPanel(
         'input.type == "Visualize"',
@@ -74,6 +81,8 @@ ui <- fluidPage(
       tabsetPanel(
         id = "type",
         tabPanel("View", DT::dataTableOutput("view")),
+        tabPanel("Profile", tableOutput("profile")),
+        #tabPanel("Profile", plotOutput("plot_missing")),
         tabPanel("Visualize", plotOutput("visualize"))
       )
     )
