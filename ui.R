@@ -55,7 +55,12 @@ ui <- fluidPage(
         tags$hr(),
         
         # placeholder for dynamic UI
-        uiOutput("vars_controls")
+        uiOutput("vars_controls"), 
+        
+        # Horizontal line ----
+        tags$hr(),
+        
+        downloadButton("downloadData", "Download")
         
       ),
       
@@ -79,9 +84,9 @@ ui <- fluidPage(
       tabsetPanel(
         id = "type",
         tabPanel("View", fluidRow(DT::dataTableOutput("view")), 
-                 fluidRow(tableOutput("introduce")),
-                 fluidRow(plotOutput("percentages"))
-                 ),
+                 tags$hr(),
+                 fluidRow(tableOutput("introduce"))),
+                 
     
         tabPanel("Visualize",
                  h3(textOutput("caption")),

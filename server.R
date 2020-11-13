@@ -48,18 +48,20 @@ server <- function(input, output) {
   
   
   output$view <- DT::renderDataTable({
-    DT::datatable(data_in()[, input$show_vars, drop = FALSE])
+    DT::datatable(data_in()[, input$show_vars, drop = FALSE],
+                  rownames = FALSE,
+                  filter = "top",
+                  extensions = 'Buttons',
+                  options = list(
+                    dom = "tB",
+                    buttons = c('csv', 'excel', 'pdf', 'print')
+                  ))
   })
   
   output$introduce <- renderTable({
     introduce(data_in()[, input$show_vars, drop = FALSE])
   })
   
-  output$percentages <- renderPlot({
-    plot_intro(data_in()[, input$show_vars, drop = FALSE])
-
-  })
-
   
   
   #### VISUALIZE ####
@@ -166,4 +168,16 @@ server <- function(input, output) {
     plots()
   })
   
+  
+  #### DOWNLOAD ####
+  
+  # Downloadable csv of selected dataset ----
+  # output$downloadData <- downloadHandler(
+  #   filename = function() {
+  #     paste(input$dataset, ".csv", sep = "")
+  #   },
+  #   content = function(file) {
+  #     write.csv(datasetInput(), file, row.names = FALSE)
+  #   }
+  # )
 }
