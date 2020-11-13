@@ -33,6 +33,7 @@ server <- function(input, output) {
   
   
   #### VIEW ####
+  require(DataExplorer)
   
   
   # generate checkbox in the UI with variables for the chosen table
@@ -42,23 +43,23 @@ server <- function(input, output) {
                        choices = vars, selected = vars)
   })
   
+  
+  # OUTPUT
+  
+  
   output$view <- DT::renderDataTable({
     DT::datatable(data_in()[, input$show_vars, drop = FALSE])
   })
   
-  
-  
-  #### PROFILE ####
-  
-  output$profile <- renderTable({
-    introduce(data_in())
+  output$introduce <- renderTable({
+    introduce(data_in()[, input$show_vars, drop = FALSE])
   })
   
-  # output$plot_missing <- renderPlot({
-  #   plot_missing(data_in())
-  # 
-  # })
-  # 
+  output$percentages <- renderPlot({
+    plot_intro(data_in()[, input$show_vars, drop = FALSE])
+
+  })
+
   
   
   #### VISUALIZE ####

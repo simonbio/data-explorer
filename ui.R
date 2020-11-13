@@ -1,7 +1,12 @@
 library(shiny)
 
 ui <- fluidPage(
-  title = "Data-Explo",
+  
+  title = "Data-Viewer",
+  titlePanel("Data-Viewer"),
+  tags$b("Author:"), (" Simon Kønig"),
+  tags$hr(),
+  
   sidebarLayout(
     sidebarPanel(
       
@@ -55,12 +60,6 @@ ui <- fluidPage(
       ),
       
       
-      # UI for data profile panel ----
-      conditionalPanel(
-        'input.type == "Profile"'
-        
-      ),
-      
       # UI for visualize panel ----
       conditionalPanel(
         'input.type == "Visualize"',
@@ -77,13 +76,16 @@ ui <- fluidPage(
       )
     ),
     mainPanel(
-      h3(textOutput("caption")),
       tabsetPanel(
         id = "type",
-        tabPanel("View", DT::dataTableOutput("view")),
-        tabPanel("Profile", tableOutput("profile")),
-        #tabPanel("Profile", plotOutput("plot_missing")),
-        tabPanel("Visualize", plotOutput("visualize"))
+        tabPanel("View", fluidRow(DT::dataTableOutput("view")), 
+                 fluidRow(tableOutput("introduce")),
+                 fluidRow(plotOutput("percentages"))
+                 ),
+    
+        tabPanel("Visualize",
+                 h3(textOutput("caption")),
+                 plotOutput("visualize"))
       )
     )
   )
