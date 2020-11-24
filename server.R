@@ -1,6 +1,14 @@
 server <- function(input, output) {
-  require(ggplot2)
-  require(ggthemes)
+  
+  #### LOAD PACKAGES ####
+  
+  pkgs <- c('ggplot2', 'ggthemes', 'DataExplorer',
+            'kableExtra', 'shiny', 'shinythemes')
+  
+  pkg_setup(pkgs)
+  
+  
+  #### READ DATA ####
   
   data_in <- reactive({
     
@@ -33,7 +41,6 @@ server <- function(input, output) {
   
   
   #### VIEW ####
-  require(DataExplorer)
   
   
   # generate checkbox in the UI with variables for the chosen table
@@ -58,10 +65,12 @@ server <- function(input, output) {
                   ))
   })
   
-  output$introduce <- renderTable({
-    introduce(data_in()[, input$show_vars, drop = FALSE])
-  })
+  output$introduce <- function(){
+    tmp <- t(introduce(data_in()[, input$show_vars]))
   
+    tmp %>% kbl(caption = 'Basic information for input data') %>%
+      kable_styling()
+  }
   
   
   #### VISUALIZE ####
@@ -171,13 +180,13 @@ server <- function(input, output) {
   
   #### DOWNLOAD ####
   
-  # Downloadable csv of selected dataset ----
-  # output$downloadData <- downloadHandler(
-  #   filename = function() {
-  #     paste(input$dataset, ".csv", sep = "")
-  #   },
-  #   content = function(file) {
-  #     write.csv(datasetInput(), file, row.names = FALSE)
-  #   }
-  # )
+  
+  output$download_button <- downloadHandler(
+    filename = function() {
+      paste0(input$plot_type, "_", input$variable, ".tiff")
+    },
+    content = function(file) {
+      ggsave(filename = file, dpi = as.numeric(input$dpi), width=as.numeric(input$width), height=as.numeric(input$heigth), units=input$unit)
+    }
+  )
 }

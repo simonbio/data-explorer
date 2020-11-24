@@ -1,6 +1,6 @@
-library(shiny)
 
-ui <- fluidPage(
+
+ui <- fluidPage(theme = shinytheme("united"),
   
   title = "Data-Viewer",
   titlePanel("Data-Viewer"),
@@ -9,6 +9,12 @@ ui <- fluidPage(
   
   sidebarLayout(
     sidebarPanel(
+      helpText("This app is intented as a graphical user interface for non R users. It allows the user to carry out basic data
+               manipulation as well as exploring the data visually with various plot types. The plot functionalities are setup
+               to plot based on a predictor variable (feature) and a categorical outcome (label)"),
+      
+      # Horizontal line ----
+      tags$hr(),
       
       # UI for view panel ----
       conditionalPanel(
@@ -55,12 +61,8 @@ ui <- fluidPage(
         tags$hr(),
         
         # placeholder for dynamic UI
-        uiOutput("vars_controls"), 
+        uiOutput("vars_controls")  
         
-        # Horizontal line ----
-        tags$hr(),
-        
-        downloadButton("downloadData", "Download")
         
       ),
       
@@ -76,9 +78,25 @@ ui <- fluidPage(
         checkboxInput("show_points", "show points", TRUE),
         # Horizontal line ----
         tags$hr(),
-        actionButton("plot_button", "Plot!")
+        
+        actionButton("plot_button", "Plot!"),
+        
+        downloadButton("download_button", "Download"), 
+        
+        br(),
+        br(),
+        tags$b("Specify Width, Height and dpi of TIFF file"), ("(default are 17.8 x 17.8 cm - 300dpi):"),
+        br(),
+        br(),
+        textInput("width", "Width of the TIFF file", ""),
+        textInput("heigth", "Height of the TIFF file", ""),
+        selectInput("unit", "Units", 
+                    c("cm", "mm", "in")),
+        selectInput("dpi", "Resolution", 
+                    c("300", "600", "150"))
         
       )
+      
     ),
     mainPanel(
       tabsetPanel(
